@@ -1,6 +1,24 @@
 #!/bin/bash
 
-CREDENTIAL_FILE="$HOME/.github_credentials"
+# Default
+CREDENTIAL_DIR="$HOME"
+
+# Argumente parsen
+for arg in "$@"; do
+  case $arg in
+    -o=*|--out=*)
+      CREDENTIAL_DIR="${arg#*=}"
+      shift
+      ;;
+    *)
+      ;;
+  esac
+done
+
+# Ordner erstellen falls nicht vorhanden
+mkdir -p "$CREDENTIAL_DIR"
+
+CREDENTIAL_FILE="${CREDENTIAL_DIR}/.github_credentials"
 
 # Funktion zum Speichern der Zugangsdaten
 save_credentials() {
@@ -9,13 +27,12 @@ save_credentials() {
   echo
   echo "${GITHUB_USER}:${GITHUB_TOKEN}" | base64 > "$CREDENTIAL_FILE"
   chmod 600 "$CREDENTIAL_FILE"
-  echo "✅ Credentials saved in $CREDENTIAL_FILE"
+  echo "Credentials saved in $CREDENTIAL_FILE"
 }
 
-# Funktion zum Laden der Zugangsdaten
 load_credentials() {
   if [ ! -f "$CREDENTIAL_FILE" ]; then
-    echo "❌ No credentials found."
+    echo "No credentials found."
     save_credentials
   fi
   CREDS=$(base64 -d "$CREDENTIAL_FILE")
@@ -23,15 +40,15 @@ load_credentials() {
   GITHUB_TOKEN=$(echo "$CREDS" | cut -d: -f2-)
 }
 
-# Funktion zum Klonen eines privaten Repos
 clone_repo() {
   read -p "Organisation/Repo (e.g. mycompany/project): " REPO
   load_credentials
   git clone "https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${REPO}.git"
 }
 
-# Hauptmenü
-echo "🔐 GitHub Auth-Skript"
+echo "GitHub Auth Script"
+echo "Credential location: $CREDENTIAL_FILE"
+
 select choice in "Save login" "Clone repo" "Exit"; do
   case $choice in
     "Save login") save_credentials ;;
